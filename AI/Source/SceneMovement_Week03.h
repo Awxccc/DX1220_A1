@@ -18,7 +18,7 @@ public:
 
 	void RenderGO(GameObject* go);
 
-	GameObject* FetchGO(/* Exercise 3: Add parameter here*/);
+	GameObject* FetchGO(GameObject::GAMEOBJECT_TYPE type);
 protected:
 
 	std::vector<GameObject*> m_goList;

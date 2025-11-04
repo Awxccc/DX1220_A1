@@ -28,12 +28,14 @@ void SceneMovement_Week03::Init()
 	Math::InitRNG();
 
 	/* Exercise 3: Addcodes here*/
+	SceneData::GetInstance()->SetObjectCount(0);
+	SceneData::GetInstance()->SetFishCount(0);
 	m_noGrid = 20;
 	m_gridSize = m_worldHeight / m_noGrid;
 	m_gridOffset = m_gridSize / 2;
 	m_hourOfTheDay = 0;
 
-	GameObject* go = FetchGO(/* Exercise 3: Add parameter here*/);
+	GameObject* go = FetchGO(GameObject::GO_SHARK);
 	go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
 	go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
 	go->target = go->pos;
@@ -41,12 +43,12 @@ void SceneMovement_Week03::Init()
 	srand(time(NULL));
 }
 
-GameObject* SceneMovement_Week03::FetchGO(/* Exercise 3: Add parameter here*/)
+GameObject* SceneMovement_Week03::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 {
 	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
 	{
 		GameObject* go = (GameObject*)*it;
-		if (!go->active && /* Exercise 3: Add codes here*/)
+		if (!go->active && go->type == type)
 		{
 			go->active = true;
 			return go;
@@ -54,9 +56,26 @@ GameObject* SceneMovement_Week03::FetchGO(/* Exercise 3: Add parameter here*/)
 	}
 	for (unsigned i = 0; i < 5; ++i)
 	{
-		GameObject* go = new GameObject(/* Exercise 3: Add parameter here*/);
+		GameObject* go = new GameObject(type);
 		m_goList.push_back(go);
 		/* Exercise 3: Add codes here*/
+		if (type == GameObject::GO_FISH)
+		{
+			//create state machine and add states
+			go->sm = new StateMachine();
+			go->sm->AddState(new StateTooFull("TooFull", go));
+			go->sm->AddState(new StateFull("Full", go));
+			go->sm->AddState(new StateHungry("Hungry", go));
+			go->sm->AddState(new StateDead("Dead", go));
+		}
+		else if (type == GameObject::GO_SHARK)
+		{
+			//create state machine and add states
+			go->sm = new StateMachine();
+			go->sm->AddState(new StateCrazy("Crazy", go));
+			go->sm->AddState(new StateNaughty("Naughty", go));
+			go->sm->AddState(new StateHappy("Happy", go));
+		}
 		/* In SceneMovement_Week03::FetchGO(), add these codes which adds states to the Fish and GO_SHARK Game Objects. */
 	}
 	return FetchGO(type);
@@ -142,7 +161,19 @@ void SceneMovement_Week03::Update(double dt)
 	}
 	/* Exercise 3: Add codes here*/
 	/* In SceneMovement_Week03::Update(), add these codes to add a GO_SHARK when you press the ‘B’ key. */
-
+	static bool bBState = false;
+	if(!bBState && Application::IsKeyPressed('B'))
+	{
+		bBState = true;
+		GameObject* go = FetchGO(GameObject::GO_SHARK);
+		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
+		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
+		go->target = go->pos;
+	}
+	else if (bBState && !Application::IsKeyPressed('B'))
+	{
+		bBState = false;
+	}
 
 	//StateMachine
 	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
@@ -151,6 +182,10 @@ void SceneMovement_Week03::Update(double dt)
 		if (!go->active)
 			continue;
 		/* Exercise 3: Add codes here*/
+		if (go->sm)
+		{
+			go->sm->Update(dt);
+		}
 	}
 
 	//External triggers
@@ -226,6 +261,7 @@ void SceneMovement_Week03::Update(double dt)
 						{
 							highestEnergy = go2->energy;
 							go->nearest = go2;
+							m_speed = 3.f;
 						}
 					}
 				}
@@ -270,6 +306,24 @@ void SceneMovement_Week03::Update(double dt)
 	}
 
 	/* Exercise 3: Add codes here*/
+	//Counting objects
+	int objectCount = 0;
+	int fishCount = 0;
+	m_numGO[GameObject::GO_FISH] = m_numGO[GameObject::GO_SHARK] =
+		m_numGO[GameObject::GO_FISHFOOD] = 0;
+	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it !=
+		m_goList.end(); ++it)
+	{
+		GameObject* go = (GameObject*)*it;
+		if (!go->active)
+			continue;
+		++objectCount;
+		++m_numGO[go->type];
+		if (go->type == GameObject::GO_FISH)
+			++fishCount;
+	}
+	SceneData::GetInstance()->SetObjectCount(objectCount);
+	SceneData::GetInstance()->SetFishCount(fishCount);
 }
 
 
@@ -293,6 +347,25 @@ void SceneMovement_Week03::RenderGO(GameObject* go)
 		modelStack.Translate(go->pos.x, go->pos.y, zOffset);
 		modelStack.Scale(go->scale.x, go->scale.y, go->scale.z);
 		/* Exercise 3: Add codes here*/
+		if (go->sm)
+		{
+			if(go->sm->GetCurrentState() == "TooFull")
+			{
+				RenderMesh(meshList[GEO_TOOFULL], false);
+			}
+			else if (go->sm->GetCurrentState() == "Full")
+			{
+				RenderMesh(meshList[GEO_FULL], false);
+			}
+			else if (go->sm->GetCurrentState() == "Hungry")
+			{
+				RenderMesh(meshList[GEO_HUNGRY], false);
+			}
+			else
+			{
+				RenderMesh(meshList[GEO_DEAD], false);
+			}
+		}
 
 		ss.precision(3);
 		ss << go->energy;
@@ -307,6 +380,21 @@ void SceneMovement_Week03::RenderGO(GameObject* go)
 		modelStack.Scale(go->scale.x, go->scale.y, go->scale.z);
 
 		/* Exercise 3: Add codes here*/
+		if(go->sm)
+		{
+			if (go->sm->GetCurrentState() == "Crazy")
+			{
+				RenderMesh(meshList[GEO_CRAZY], false);
+			}
+			else if (go->sm->GetCurrentState() == "Happy")
+			{
+				RenderMesh(meshList[GEO_HAPPY], false);
+			}
+			else
+			{
+				RenderMesh(meshList[GEO_SHARK], false);
+			}
+		}
 
 		modelStack.PopMatrix();
 		break;
