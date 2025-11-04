@@ -249,11 +249,25 @@ void SceneMovement_Week03::Update(double dt)
 					if (go->sm->GetCurrentState() == "Naughty")
 					{
 						float distance = (go->pos - go2->pos).Length();
-						if (distance < nearestDistance && (go2->sm->GetCurrentState() == "TooFull" || go2->sm->GetCurrentState() == "Full"))
+						if (m_numGO[GameObject::GO_FISH] > 10)
 						{
-							nearestDistance = distance;
-							go->nearest = go2;
+							if (distance < nearestDistance && (go2->sm->GetCurrentState() == "TooFull" || go2->sm->GetCurrentState() == "Full"))
+							{
+								nearestDistance = distance;
+								go->nearest = go2;
+								m_speed = 2.f;
+								go->sm->SetNextState("Crazy");
+
+								
+							}
 						}
+						else if (m_numGO[GameObject::GO_FISH] < 6)
+						{
+							//move normal speed in 4 random directions
+							m_speed = 1.f;
+							go->sm->SetNextState("Happy");
+						}
+
 					}
 					if (go->sm->GetCurrentState() == "Crazy")
 					{
@@ -262,6 +276,10 @@ void SceneMovement_Week03::Update(double dt)
 							highestEnergy = go2->energy;
 							go->nearest = go2;
 							m_speed = 3.f;
+							if (m_numGO[GameObject::GO_FISH] <= 12)
+							{
+								go->sm->SetNextState("Naughty");
+							}
 						}
 					}
 				}
