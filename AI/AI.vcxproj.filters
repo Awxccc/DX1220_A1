@@ -83,6 +83,15 @@
     <ClCompile Include="Source\SceneMovement_Week03.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\SceneMovement_Week04.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneKnight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneQueen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Application.h">
@@ -160,23 +169,32 @@
     <ClInclude Include="Source\NNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Source\SceneMovement_Week02.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\StatesFish.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\StatesFishFood.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\StatesShark.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SceneMovement_Week01.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneMovement_Week02.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Source\SceneMovement_Week03.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneMovement_Week04.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneQueen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StatesFish.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StatesFishFood.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StatesShark.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SceneKnight.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
