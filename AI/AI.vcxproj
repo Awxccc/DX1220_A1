@@ -143,6 +143,7 @@
     <ClCompile Include="Source\SceneBase.cpp" />
     <ClCompile Include="Source\SceneData.cpp" />
     <ClCompile Include="Source\SceneKnight.cpp" />
+    <ClCompile Include="Source\SceneMaze.cpp" />
     <ClCompile Include="Source\SceneMovement_Week01.cpp" />
     <ClCompile Include="Source\SceneMovement_Week02.cpp" />
     <ClCompile Include="Source\SceneMovement_Week03.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="Source\SceneBase.h" />
     <ClInclude Include="Source\SceneData.h" />
     <ClInclude Include="Source\SceneKnight.h" />
+    <ClInclude Include="Source\SceneMaze.h" />
     <ClInclude Include="Source\SceneMovement_Week01.h" />
     <ClInclude Include="Source\SceneMovement_Week02.h" />
     <ClInclude Include="Source\SceneMovement_Week03.h" />

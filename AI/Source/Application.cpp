@@ -15,6 +15,9 @@
 #include "SceneMovement_Week02.h"
 #include "SceneMovement_Week03.h"
 #include "SceneMovement_Week04.h"
+#include "SceneKnight.h"
+#include "SceneQueen.h"
+#include "SceneMaze.h"
 
 GLFWwindow* m_window;
 const unsigned char FPS = 60; // FPS of this game
@@ -146,6 +149,7 @@ bool Application::LoadScene()
 			break;
 		case 9:
 			std::cout << "You selected SceneMaze.\n";
+			m_scene = new SceneMaze();
 			bContinue = false;
 			break;
 		case 10:
