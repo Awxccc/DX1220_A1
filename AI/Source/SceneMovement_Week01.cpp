@@ -131,13 +131,58 @@ void SceneMovement_Week01::Update(double dt)
 				go->pos = go->target;
 				float random = Math::RandFloatMinMax(0.f, 1.f);
 				cout << "2nd try: " << random << endl;
-				//Exercise: use probability to decide go up or right
+				////Exercise: use probability to decide go up or right
+				//if (random >= 0.5f)
+				//	go->target.x += m_gridSize;
+				//else
+				//	go->target.y += m_gridSize;
 
-				//Exercise: change the conditions so that the game objects can move randomly
+				////Exercise: change the conditions so that the game objects can move randomly
+				//if ((random >= 0.0f) && (random <= 0.25f))
+				//	go->target.x -= m_gridSize;
+				//else if ((random > 0.25f) && (random <= 0.5f))
+				//	go->target.x += m_gridSize;
+				//else if ((random > 0.5f) && (random <= 0.75f))
+				//	go->target.y -= m_gridSize;
+				//else if ((random > 0.75f) && (random <= 1.0f))
+				//	go->target.y += m_gridSize;
 
 				//Exercise: set some areas in the scene so that the game objects will go to different areas at various time of the day
+				if ((m_hourOfTheDay >= 0.0f) && (m_hourOfTheDay <= 5.0f))
+				{
+					go->target.x = m_worldHeight / 2;
+					go->target.y = m_worldHeight / 2;
+				}
+				else if ((m_hourOfTheDay > 5.0f) && (m_hourOfTheDay <= 10.0f))
+				{
+					go->target.x = m_gridOffset;
+					go->target.y = m_gridOffset;
+				}
+				else if ((m_hourOfTheDay > 10.0f) && (m_hourOfTheDay <= 15.0f))
+				{
+					go->target.x = m_worldHeight - m_gridOffset;
+					go->target.y = m_gridOffset;
+				}
+				else if ((m_hourOfTheDay > 15.0f) && (m_hourOfTheDay <= 20.0f))
+				{
+					go->target.x = m_worldHeight - m_gridOffset;
+					go->target.y = m_worldHeight - m_gridOffset;
+				}
+				else
+				{
+					go->target.x = m_gridOffset;
+					go->target.y = m_worldHeight - m_gridOffset;
+				}
 
 				//Exercise: set boundaries so that game objects would not leave scene
+				if (go->target.x < 0.0f)
+					go->target.x = m_gridOffset;
+				if (go->target.y < 0.0f)
+					go->target.y = m_gridOffset;
+				if (go->target.x > m_worldHeight - m_gridOffset)
+					go->target.x = m_worldHeight - m_gridOffset;
+				if (go->target.y > m_worldHeight - m_gridOffset)
+					go->target.y = m_worldHeight - m_gridOffset;
 			}
 			else
 			{

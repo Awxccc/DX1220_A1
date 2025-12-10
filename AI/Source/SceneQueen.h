@@ -16,8 +16,13 @@ public:
 	virtual void Exit();
 
 protected:
-	// Exercise Week 06
-
+	void PrintSolution();
+	bool CheckQueen();
+	void DFS(int row);
+	//an array or vector container to store the queens
+	std::vector<int> m_queen;
+	int m_numSolutions;
+	int m_startGrid;
 
 	float m_speed;
 	float m_worldWidth;

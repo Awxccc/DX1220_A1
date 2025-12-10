@@ -1,4 +1,7 @@
 #include "StatesFish.h"
+// Exercise Week 05
+#include "PostOffice.h"
+#include "ConcreteMessages.h"
 
 static const float ENERGY_DROP_RATE = 0.2f;
 static const float FULL_SPEED = 8.f;
@@ -85,6 +88,10 @@ void StateHungry::Enter()
 {
 	m_go->moveSpeed = HUNGRY_SPEED;
 	m_go->nearest = NULL;
+
+	// Exercise Week 05
+	int range[2] = { -3, 3 };
+	PostOffice::GetInstance()->Send("Scene", new MessageSpawnFood(m_go, GameObject::GO_FISHFOOD, 2, range));
 }
 
 void StateHungry::Update(double dt)

@@ -110,27 +110,25 @@ void SceneTicTacToe::Update(double dt)
 	{
 		// Exercise: Implement Reset button
 		// Exercise: Reset the relevant variables to default values
-
 		m_bCrossTurn = true;
 		m_bGameOver = false;
 		m_winner = WHO_CONTENT::WHO_NONE;
 		m_numberOfMoves = 0;
 
 		// Exercise: Use loops to reset the active status of the game objects in m_goList
-		for (std::vector<GameObject *>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
+		for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
 		{
-			GameObject *go = (GameObject *)*it;
-			if(go->active)
-			go->active = false;
+			GameObject* go = (GameObject*)*it;
+			if (go->active)
+			{
+				go->active = false;
+			}
 		}
-
-
 		// Exercise: Use loops to reset m_grid array to WHO_NONE
-		for (unsigned i = 0; i < 9; ++i)
+		for (int i = 0; i < 9; i++)
 		{
-			m_grid[i] = WHO_CONTENT::WHO_NONE;
+			m_grid[i] = WHO_NONE;
 		}
-
 	}
 
 	// Don't proceed if the game is over
@@ -156,23 +154,23 @@ void SceneTicTacToe::Update(double dt)
 			int tileX = static_cast<int>(posX) / static_cast<int>(m_gridSize);
 			int tileY = static_cast<int>(posY) / static_cast<int>(m_gridSize);
 			// Get a new GameObject instance
-
+			GameObject* go = FetchGO();
 			// Set the screen-space position
-
+			go->pos.Set(tileX * m_gridSize + m_gridOffset, tileY * m_gridSize + m_gridOffset, 0.0f);
 			// Set the screen-space scale
-
+			go->scale.Set(m_gridSize, m_gridSize, 0.0f);
 			// Set this GameObject to GO_CROSS
-
+			go->type = GameObject::GO_CROSS;
 			// Update the grid ID for the game object
-
+			go->id = tileY * m_noGrid + tileX;
 			// Set this GameObject to WHO_CROSS
-
+			m_grid[go->id] = WHO_CONTENT::WHO_CROSS;
 			// Set this GameObject to active
-
+			go->active = true;
 			// Change the turn to the circle
-
+			m_bCrossTurn = !m_bCrossTurn;
 			// Increase moves by 1
-
+			m_numberOfMoves++;
 		}
 	}
 	else if (bLButtonState && !Application::IsMousePressed(0))
@@ -211,23 +209,23 @@ void SceneTicTacToe::Update(double dt)
 			int tileY = index / m_noGrid;
 			int tileX = index - tileY * m_noGrid;
 			// Get a new GameObject instance
-
+			GameObject* go = FetchGO();
 			// Set the screen-space position
-
+			go->pos.Set(tileX * m_gridSize + m_gridOffset, tileY * m_gridSize + m_gridOffset, 0.0f);
 			// Set the screen-space scale
-
+			go->scale.Set(m_gridSize, m_gridSize, 0.0f);
 			// Set this GameObject to GO_CIRCLE
-
+			go->type = GameObject::GO_CIRCLE;
 			// Update the grid ID for the game object
-
+			go->id = tileY * m_noGrid + tileX;
 			// Update the grid for the AI
-
+			m_grid[go->id] = WHO_CONTENT::WHO_CIRCLE;
 			// Set this GameObject to active
-
+			go->active = true;
 			// Change the turn to the circle
-
+			m_bCrossTurn = !m_bCrossTurn;
 			// Increase moves by 1
-
+			m_numberOfMoves++;
 		}
 	}
 
@@ -237,13 +235,36 @@ void SceneTicTacToe::Update(double dt)
 	for (int i = 0; i < 3; ++i)
 	{
 		// Check a row
-
+		if ((m_grid[i * 3 + 0] != WHO_NONE) &&
+			(m_grid[i * 3 + 0] == m_grid[i * 3 + 1] && m_grid[i * 3 + 0] == m_grid[i * 3 + 2]))
+		{
+			m_bGameOver = true;
+			m_winner = m_grid[i * 3 + 0];
+			break;
+		}
 		// Check a column
-
+		if ((m_grid[0 * 3 + i] != WHO_NONE) &&
+			(m_grid[0 * 3 + i] == m_grid[1 * 3 + i] && m_grid[0 * 3 + i] == m_grid[2 * 3 + i]))
+		{
+			m_bGameOver = true;
+			m_winner = m_grid[0 * 3 + i];
+			break;
+		}
 	}
 
 	// Check diagonals
-
+	if ((m_grid[0] != WHO_NONE) &&
+		(m_grid[0] == m_grid[4] && m_grid[0] == m_grid[8]))
+	{
+		m_bGameOver = true;
+		m_winner = m_grid[0];
+	}
+	if ((m_grid[2] != WHO_NONE) &&
+		(m_grid[2] == m_grid[4] && m_grid[2] == m_grid[6]))
+	{
+		m_bGameOver = true;
+		m_winner = m_grid[2];
+	}
 
 	// Check if all grids have been filled up
 	if (m_numberOfMoves == 9)

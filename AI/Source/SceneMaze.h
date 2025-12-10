@@ -35,7 +35,17 @@ protected:
 	float m_gridOffset;
 
 	// Exercise Week 07
-
+	void DFS(const MazePt& curr);
+	bool BFS(const MazePt& start, const MazePt& end);
+	Maze m_maze;
+	MazePt m_start;
+	MazePt m_end;
+	std::vector<Maze::TILE_CONTENT> m_myGrid; //read maze and store here
+	std::vector<bool> m_visited; //visited set for DFS/BFS
+	std::queue<MazePt> m_queue; //queue for BFS
+	std::vector<MazePt> m_previous; //to store previous tile
+	std::vector<MazePt> m_shortestPath; //to store shortest path
+	unsigned m_mazeKey;
 };
 
 #endif

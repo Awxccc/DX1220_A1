@@ -45,12 +45,11 @@ void SceneQueen::Init()
 
 	// Exercise Week 6
 	//m_queen stores the column number [1-8] of a queen in its own row. m_queen[i] stores the column number for the queen on row i.
-
-	
+	m_queen.resize(m_noGrid, -1); //use -1 to indicate the row is empty
+	m_numSolutions = 0;
 
 	// Exercise Week 06
-
-	
+	m_startGrid = 0;
 
 	DFS(m_startGrid); //start at m_startGrid
 	std::cout << "Num solutions: " << m_numSolutions << std::endl;
@@ -76,9 +75,11 @@ void SceneQueen::Update(double dt)
 	{
 		// Exercise Week 06
 		// Exercise: Implement Reset button
+		m_numSolutions = 0;
+		std::fill(m_queen.begin(), m_queen.end(), -1);
 
-		
-
+		bStop = false;
+		//std::fill(m_grid_results.begin(), m_grid_results.end(), -1);
 
 		m_startGrid = rand() % (m_noGrid * m_noGrid);
 		std::cout << "\n********\nReset and restart the DFS at : " << m_startGrid << std::endl;
@@ -99,9 +100,19 @@ void SceneQueen::Update(double dt)
 		float posY = (h - static_cast<float>(y)) / h * m_worldHeight;
 
 		// Exercise Week 06
+		int tileX = (int)((posX) / m_gridSize);
+		int tileY = (int)((posY) / m_gridSize);
+		// Calculate the m_startGrid
+		m_startGrid = tileY * m_noGrid + tileX;
 
-		
-		
+		// Reset the parameters
+		m_numSolutions = 0;
+		std::fill(m_queen.begin(), m_queen.end(), -1);
+
+		//Exercise: Implement Reset button
+		bStop = false;
+		//std::fill(m_grid_results.begin(), m_grid_results.end(), -1);
+
 		// Find from this m_startGrid grid
 		std::cout << "\n********\nReset and restart the DFS at : " << m_startGrid << std::endl;
 		DFS(m_startGrid);

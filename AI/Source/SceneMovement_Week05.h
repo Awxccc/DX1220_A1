@@ -1,15 +1,16 @@
-#ifndef SCENE_MOVEMENT_WEEK02_H
-#define SCENE_MOVEMENT_WEEK02_H
+#ifndef SCENE_MOVEMENT_WEEK05_H
+#define SCENE_MOVEMENT_WEEK05_H
 
 #include "GameObject.h"
 #include <vector>
 #include "SceneBase.h"
+#include "ObjectBase.h"
 
-class SceneMovement_Week02 : public SceneBase
+class SceneMovement_Week05 : public SceneBase, public ObjectBase
 {
 public:
-	SceneMovement_Week02();
-	~SceneMovement_Week02();
+	SceneMovement_Week05();
+	~SceneMovement_Week05();
 
 	virtual void Init();
 	virtual void Update(double dt);
@@ -17,11 +18,13 @@ public:
 	virtual void Exit();
 
 	void RenderGO(GameObject *go);
+	bool Handle(Message* message);
 
-	GameObject* FetchGO();
+	GameObject* FetchGO(GameObject::GAMEOBJECT_TYPE type);
 protected:
 
 	std::vector<GameObject *> m_goList;
+	std::vector<GameObject*> m_goList_Add;
 	float m_speed;
 	float m_worldWidth;
 	float m_worldHeight;

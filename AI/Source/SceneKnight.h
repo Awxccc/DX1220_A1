@@ -1,4 +1,4 @@
-ï»¿#ifndef SCENE_KNIGHT_H
+#ifndef SCENE_KNIGHT_H
 #define SCENE_KNIGHT_H
 
 #include <vector>
@@ -10,19 +10,22 @@ public:
 	SceneKnight();
 	~SceneKnight();
 
-	void PrintTour();
-	void DFS(int index);
-	
-
-
 	virtual void Init();
 	virtual void Update(double dt);
 	virtual void Render();
 	virtual void Exit();
 
 protected:
-	// Exercise Week 06
-
+	void PrintTour();
+	void DFS(int index);
+	//an array or vector container to store the knight’s moves
+	std::vector<int> m_grid;
+	std::vector<int> m_grid_results;
+	int m_numTours;
+	int m_move;
+	int m_move_results;
+	int m_call;
+	int m_startGrid;
 
 	float m_speed;
 	float m_worldWidth;
@@ -32,14 +35,6 @@ protected:
 	float m_gridSize;
 	float m_gridOffset;
 
-	//an array or vector container to store the knight's moves
-	std::vector<int> m_grid;
-	std::vector<int> m_grid_results;
-	int m_numTours;
-	int m_move;
-	int m_move_results;
-	int m_call;
-	int m_startGrid;
 	bool bStop;
 };
 

@@ -42,6 +42,11 @@ bool GameObject::Handle(Message* message)
 		moveSpeed = 0;
 		return true;
 	}
+	else if (dynamic_cast<MessageEvolve*>(message) != nullptr)
+	{
+		// Exercise Week 05
+		type = GameObject::GO_FISH;
+	}
 
 	//note: pardon the inconsistency(when compared to SceneMovement's Handle)
 	//we do NOT want to create a new message on the heap PER object for performance reasons

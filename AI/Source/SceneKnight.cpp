@@ -13,11 +13,9 @@ SceneKnight::SceneKnight()
 	m_gridSize{},
 	m_gridOffset{},
 	m_grid{},
-	// Exercise Week 6
 	m_numTours{},
 	m_move{},
-	m_call{},
-	m_startGrid{}
+	m_call{}
 {
 }
 
@@ -44,7 +42,6 @@ void SceneKnight::Init()
 
 	bStop = false;
 
-	// Exercise Week 06
 	//m_grid holds the num of moves that the knight has taken to reach each cell
 	//m_grid[0] == 1 means that the knight started out at the lower left corner of the board
 	//m_grid[8] == 2 means that the knight's next move is to cell #8
@@ -52,10 +49,7 @@ void SceneKnight::Init()
 	m_grid.resize(m_noGrid * m_noGrid, -1);
 	m_grid_results.resize(m_noGrid * m_noGrid, -1);
 	m_numTours = m_move = m_call = 0;
-	m_startGrid = 0;
-	DFS(m_startGrid); //start at m_startGrid
-	
-
+	DFS(0); //start at index 0
 }
 
 void SceneKnight::Update(double dt)
@@ -76,16 +70,17 @@ void SceneKnight::Update(double dt)
 	}
 	if (Application::IsKeyPressed('R'))
 	{
-		// Exercise Week 06: Implement Reset button
+		//Exercise: Implement Reset button
+		//DO IT YOURSELF
 		bStop = false;
 		std::fill(m_grid.begin(), m_grid.end(), -1);
 		std::fill(m_grid_results.begin(), m_grid_results.end(), -1);
 		m_move = 0;
 		m_move_results = 0;
 		m_call = 0;
-		m_startGrid = rand() % (m_noGrid * m_noGrid);
-		std::cout << "\n********\nReset and restart the DFS at : " << m_startGrid << std::endl;
-		DFS(m_startGrid); // Start at m_startGrid
+		int iStartINdex = rand() % (m_noGrid * m_noGrid);
+		std::cout << "\n********\nReset and restart the DFS at : " << iStartINdex << std::endl;
+		DFS(iStartINdex); //start at index rand() % 64
 	}
 
 	//Input Section
@@ -100,14 +95,6 @@ void SceneKnight::Update(double dt)
 		int h = Application::GetWindowHeight();
 		float posX = static_cast<float>(x) / w * m_worldWidth;
 		float posY = (h - static_cast<float>(y)) / h * m_worldHeight;
-
-		// Exercise Week 06
-		// Enter your codes here.
-
-
-		// Find from this m_startGrid grid
-		std::cout << "\n********\nReset and restart the DFS at : " << m_startGrid << std::endl;
-		DFS(m_startGrid);
 	}
 	else if (bLButtonState && !Application::IsMousePressed(0))
 	{
@@ -239,13 +226,21 @@ void SceneKnight::Exit()
 
 void SceneKnight::PrintTour()
 {
-	// Exercise Week 06
-	// Print the knight's path
+	//print the knight's path
 	std::cout << "Printing the Tour: " << std::endl;
 	std::cout << "\tNum tours: " << m_numTours << std::endl;
 	std::cout << "\tCalls (DFS):" << m_call << std::endl << std::endl;
+	//for (int index = 0; index < m_grid.size(); index++)
+	for (int iRow = (m_noGrid - 1); iRow >= 0; iRow--)
+	{
+		std::cout << "\t";
+		for (int iCol = 0; iCol < m_noGrid; iCol++)
+		{
+			std::cout << (iRow * m_noGrid + iCol) << "[" << m_grid[iRow * m_noGrid + iCol] << "] ";
+		}
+		std::cout << std::endl;
+	}
 	std::cout << std::endl;
-
 }
 
 void SceneKnight::DFS(int index)
@@ -258,28 +253,14 @@ void SceneKnight::DFS(int index)
 		return;
 	}
 
-	// Exercise Week 06
-	if(m_grid[index] == -1)
-	{
-		//valid move
-
-	}
-	else
-	{
-		//invalid move
-
-		return;
-	}
-
-	// For better performance, consider implementing DFS iteratively rather than recursively
+	//for better performance, consider implementing DFS iteratively rather than recursively
 	++m_call;
-	// If we have found a grid which is already "used", then we return to the calling function
 	if (m_grid[index] != -1)
 		return;
 	++m_move;
 
-	// Every 10000 calls to DFS(), we print out and render to the OpenGL window
-	if (m_call % 10000 == 0)
+	// Every 1000000 calls to DFS(), we print out and render to the OpenGL window
+	if (m_call % 1000000 == 0)
 	{
 		std::cout << "Num tours: " << m_numTours << std::endl;
 		std::cout << "Calls (DFS):" << m_call << std::endl;
@@ -288,14 +269,11 @@ void SceneKnight::DFS(int index)
 		for (int index = 0; index < m_grid.size(); index++)
 			m_grid_results[index] = m_grid[index];
 		m_move_results = m_move;
-		// Exercise Week 06
-
-
+		Application::GetInstance().Iterate(); //draw to screen
 	}
 
-	// Update the m_grid with the move number
 	m_grid[index] = m_move;
-	if (m_move == m_noGrid * m_noGrid) //knight has made moves to all grids in the chessboard
+	if (m_move == m_noGrid * m_noGrid) //knight has made final move
 	{
 		++m_numTours;
 		bStop = true;
@@ -308,12 +286,10 @@ void SceneKnight::DFS(int index)
 		// Print the tour
 		PrintTour();
 
-		// Draw to screen to visualize the search (warning: makes the search excruciatingly slow)
-		//Application::GetInstance().Iterate(); 
+		//Application::GetInstance().Iterate(); //draw to screen to visualize the search (warning: makes the search excruciatingly slow)
 	}
 	else
 	{
-		// The possible moves for a knight piece in chess are defined here
 		static int offsets[][2] = { {2, 1}, {1, 2}, {-1, 2}, {-2, 1}, {-2, -1}, {-1, -2}, {1, -2}, {2, -1} };
 		for (int* offset : offsets) //loops through each offset in the above offsets
 		{

@@ -4,9 +4,9 @@
 #include "GameObject.h"
 #include <vector>
 #include "SceneBase.h"
-// Exercise Week 04
+#include "ObjectBase.h"
 
-class SceneMovement_Week04 : public SceneBase, public ObjectBase /* Exercise Week 04 */
+class SceneMovement_Week04 : public SceneBase, public ObjectBase
 {
 public:
 	SceneMovement_Week04();
@@ -18,9 +18,7 @@ public:
 	virtual void Exit();
 
 	void RenderGO(GameObject *go);
-	// Exercise Week 04
-	
-	virtual bool Handle(Message* message);
+	bool Handle(Message* message);
 
 	GameObject* FetchGO(GameObject::GAMEOBJECT_TYPE type);
 protected:

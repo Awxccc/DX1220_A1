@@ -16,16 +16,16 @@ public:
 	virtual void Render();
 	virtual void Exit();
 
-	void RenderGO(GameObject* go);
+	void RenderGO(GameObject *go);
 
 	GameObject* FetchGO(GameObject::GAMEOBJECT_TYPE type);
 protected:
 
-	std::vector<GameObject*> m_goList;
+	std::vector<GameObject *> m_goList;
 	float m_speed;
 	float m_worldWidth;
 	float m_worldHeight;
-	GameObject* m_ghost;
+	GameObject *m_ghost;
 	int m_objectCount;
 	int m_noGrid;
 	float m_gridSize;

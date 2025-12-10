@@ -35,8 +35,12 @@ void SceneMovement_Week02::Init()
 	m_gridOffset = m_gridSize / 2;
 	m_hourOfTheDay = 0;
 
-	// Exercise: Spawn a single GO_SHARK at the start of the scene (make it fast)
-
+	GameObject *go = FetchGO();
+	go->type = GameObject::GO_SHARK;
+	go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
+	go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
+	go->target = go->pos;
+	go->moveSpeed = 10.f;
 }
 
 GameObject* SceneMovement_Week02::FetchGO()
@@ -109,9 +113,16 @@ void SceneMovement_Week02::Update(double dt)
 	static bool bSpaceState = false;
 	if (!bSpaceState && Application::IsKeyPressed(VK_SPACE))
 	{
-		// Exercise: Use VK_SPACE to spawn GO_FISH in random location 
 		bSpaceState = true;
 		GameObject *go = FetchGO();
+		go->type = GameObject::GO_FISH;
+		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
+		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
+		go->target = go->pos;
+		go->steps = 0;
+		go->currState = GameObject::STATE_FULL;
+		go->energy = 8.f;
+		go->nearest = NULL;
 	}
 	else if (bSpaceState && !Application::IsKeyPressed(VK_SPACE))
 	{
@@ -120,9 +131,14 @@ void SceneMovement_Week02::Update(double dt)
 	static bool bVState = false;
 	if ((!bVState && Application::IsKeyPressed('V')) || (fFoodTimer > 20.0f))
 	{
-		// Exercise: Use another button to spawn GO_FISHFOOD in random location (make it slow) 
 		bVState = true;
 		GameObject *go = FetchGO();
+		go->type = GameObject::GO_FISHFOOD;
+		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
+		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
+		go->target = go->pos;
+		go->moveSpeed = 1.f;
+		fFoodTimer = 0.0f;
 	}
 	else if (bVState && !Application::IsKeyPressed('V'))
 	{
@@ -138,57 +154,45 @@ void SceneMovement_Week02::Update(double dt)
 			continue;
 		if(go->type == GameObject::GO_FISH)
 		{
-			// Exercise: Internal triggers. Implement this State Table for GO_FISH in SceneMovement::Update with a switch statement
 			switch (go->currState)
 			{
 			case GameObject::STATE_TOOFULL:
-				// Implement the codes here
-
+				go->energy -= ENERGY_DROP_RATE * static_cast<float>(dt) * m_speed;
+				go->moveSpeed = 0;
+				if (go->energy < 10.f)
+					go->currState = GameObject::STATE_FULL;
 				break;
 			case GameObject::STATE_FULL:
-				// Implement the codes here
+				go->energy -= ENERGY_DROP_RATE * static_cast<float>(dt) * m_speed;
+				go->moveSpeed = FULL_SPEED;
+				if (go->energy >= 10.f)
+					go->currState = GameObject::STATE_TOOFULL;
+				else if (go->energy < 5.f)
+					go->currState = GameObject::STATE_HUNGRY;
+				go->moveLeft = go->moveRight = go->moveUp = go->moveDown = true;
+				if (go->nearest)
+				{
+					if (go->nearest->pos.x > go->pos.x)
+						go->moveRight = false;
+					else
+						go->moveLeft = false;
+					if (go->nearest->pos.y > go->pos.y)
+						go->moveUp = false;
+					else
+						go->moveDown = false;
+				}
 				break;
 			case GameObject::STATE_HUNGRY:
 				go->energy -= ENERGY_DROP_RATE * static_cast<float>(dt) * m_speed;
+				go->moveSpeed = HUNGRY_SPEED;
 				if (go->energy >= 5.f)
-				{
 					go->currState = GameObject::STATE_FULL;
-					//go->moveSpeed = FULL_SPEED;
-				}
-				else if (go->energy <= 0.f)
+				else if (go->energy < 0.f)
 				{
 					go->currState = GameObject::STATE_DEAD;
 					go->countDown = 3.f;
 				}
 				go->moveLeft = go->moveRight = go->moveUp = go->moveDown = true;
-				/*
-				if(go->nearest)
-				{
-					Vector3 dir = go->nearest->pos - go->pos;
-					try
-					{
-						dir.Normalize();
-						if (dir.x > 0)
-						{
-							go->moveLeft = false;
-						}
-						else
-						{
-							go->moveRight = false;
-						}
-						if (dir.y > 0)
-						{
-							go->moveDown = false;
-						}
-						else
-						{
-							go->moveUp = false;
-						}
-					}
-					catch (DivideByZero)
-					{
-					}
-				}*/
 				if (go->nearest)
 				{
 					if (go->nearest->pos.x > go->pos.x)
@@ -202,16 +206,13 @@ void SceneMovement_Week02::Update(double dt)
 				}
 				break;
 			case GameObject::STATE_DEAD:
-				// Implement the codes here
-				go->moveSpeed = 0.f;
+				go->moveSpeed = 0;
 				go->countDown -= static_cast<float>(dt) * m_speed;
-				if (go->countDown <= 0.f)
+				if (go->countDown < 0)
 				{
 					go->active = false;
 					--m_objectCount;
-					++m_deadFishCount;
 				}
-
 				continue;
 				break;
 			}
@@ -240,14 +241,7 @@ void SceneMovement_Week02::Update(double dt)
 					float distance = (go->pos - go2->pos).Length();
 					if (distance < m_gridSize)
 					{
-						// Exercise: External triggers. Any time a GO_FISH collides with GO_SHARK, set energy to -1
-						go->energy = -1.f;
-						if(go->energy <= 0.f)
-						{
-							go->currState = GameObject::STATE_DEAD;
-							go->countDown = 3.f;
-							m_eatenFishCount++;
-						}
+						go->energy = -1;
 					}
 					else if (distance < SHARK_DIST && distance < nearestDistance && go->currState == GameObject::STATE_FULL)
 					{
@@ -260,7 +254,6 @@ void SceneMovement_Week02::Update(double dt)
 					float distance = (go->pos - go2->pos).Length();
 					if (distance < m_gridSize)
 					{
-						// Exercise: External triggers. Any time a GO_FISH collides with a GO_FISHFOOD, add energy to the fish (and remove the food)
 						go->energy += 2.5f;
 						go2->active = false;
 						--m_objectCount;
@@ -429,30 +422,18 @@ void SceneMovement_Week02::Render()
 	ss << "Count:" << m_objectCount;
 	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 9);
 
-	// Exercise: Show statistics - How many fishes are in the scene ?
 	ss.str("");
 	ss << "Fishes:" << m_numGO[GameObject::GO_FISH];
-	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 12);
-	// Exercise: Show statistics - How many fish food is in the scene ?
-	ss.str("");
-	ss << "Fish Food:" << m_numGO[GameObject::GO_FISHFOOD];
-	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 15);
-	// Exercise: Show statistics - How many sharks are in the scene ?
-	ss.str("");
-	ss << "Sharks:" << m_numGO[GameObject::GO_SHARK];
 	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 18);
-	// Exercise: Show statistics - How many fishes died by hunger ?
-	ss.str("");
-	ss << "Dead Fishes:" << m_deadFishCount;
-	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 21);
-	// Exercise: Show statistics - How many fishes eaten by shark ?
-	ss.str("");
-	ss << "Eaten Fishes: " << m_eatenFishCount;
 
-	// Exercise: Show statistics - How many fishes overeat ?
 	ss.str("");
-	ss << "Fishes that overate: ";
+	ss << "Shark:" << m_numGO[GameObject::GO_SHARK];
+	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 15);
 
+	ss.str("");
+	ss << "Food:" << m_numGO[GameObject::GO_FISHFOOD];
+	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 12);
+	
 	RenderTextOnScreen(meshList[GEO_TEXT], "Aquarium", Color(0, 1, 0), 3, 50, 0);
 }
 

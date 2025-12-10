@@ -40,8 +40,16 @@ void SceneMaze::Init()
 	m_gridOffset = m_gridSize / 2;
 
 	// Exercise Week 07
-
-
+	m_start.Set(0, 0);									 //set agent's starting position
+	m_mazeKey = 0;										 //seed for maze generation
+	m_maze.Generate(m_mazeKey, m_noGrid, m_start, 0.3f); //generate a maze using the provided function
+	m_myGrid.resize(m_noGrid * m_noGrid);				 //this is the maze from the agent's POV. an unexplored maze is just FOG to the agent
+	m_visited.resize(m_noGrid * m_noGrid);
+	m_previous.resize(m_noGrid * m_noGrid);				 //this is used by BFS to retrace the found path from endpt to startpoint
+	std::fill(m_myGrid.begin(), m_myGrid.end(), Maze::TILE_FOG);
+	std::fill(m_visited.begin(), m_visited.end(), false);
+	m_myGrid[m_start.y * m_noGrid + m_start.x] = Maze::TILE_EMPTY; //assume first cell is empty(guaranteed by m_maze.Generate)
+	DFS(m_start);
 }
 
 GameObject* SceneMaze::FetchGO()
@@ -99,8 +107,10 @@ void SceneMaze::Update(double dt)
 		float posY = (h - static_cast<float>(y)) / h * m_worldHeight;
 		
 		// Exercise Week 07 - turn mouse click into end point and run BFS
-
-
+		m_start = m_maze.GetCurr();
+		m_end.Set(Math::Clamp(static_cast<int>(posX / m_gridSize), 0, m_noGrid - 1), 
+				  Math::Clamp(static_cast<int>(posY / m_gridSize), 0, m_noGrid - 1));
+		BFS(m_start, m_end);
 	}
 	else if (bLButtonState && !Application::IsMousePressed(0))
 	{
@@ -178,27 +188,28 @@ void SceneMaze::Render()
 		modelStack.Scale(m_gridSize, m_gridSize, 1.f);
 
 		// Exercise Week 07 - Draw floor
-
-		
+		modelStack.PushMatrix();
+		modelStack.Translate(0.f, 0.f, -1.f); //draw floor beneath other stuff
+		RenderMesh(meshList[GEO_FLOOR], false);
+		modelStack.PopMatrix();
 
 		if (m_myGrid[i] == Maze::TILE_CONTENT::TILE_WALL)
 		{
 			// Exercise Week 07 - Draw wall
-
-
+			RenderMesh(meshList[GEO_WALL], false);
 		}
 		else if (m_myGrid[i] == Maze::TILE_CONTENT::TILE_FOG)
 		{
 			// Exercise Week 07 - Draw fog
-
-
+			meshList[GEO_WHITEQUAD]->material.kAmbient.Set(0.f, 0.f, 0.f); //framework-specific code: set quad to black color
+			RenderMesh(meshList[GEO_WHITEQUAD], true);
 		}
 		//let's color visited cells to make visualization easier when running BFS
 		else if (m_shortestPath.empty() && m_visited[i] && !m_queue.empty())
 		{
 			// Exercise Week 07 - Draw floor with green tint
-
-
+			meshList[GEO_FLOOR]->material.kAmbient.Set(0.2f, 0.8f, 0.2f); //framework-specific code: set quad to green color
+			RenderMesh(meshList[GEO_FLOOR], true);
 		}
 		modelStack.PopMatrix();
 	}
@@ -211,18 +222,24 @@ void SceneMaze::Render()
 		for (size_t i = 0; i < m_shortestPath.size() - 1; ++i)
 		{
 			// Exercise Week 07 - For each MazePt in m_shortestPath, render a sprite
+			const MazePt& pt = m_shortestPath[i];
 
-			
-
+			modelStack.PushMatrix();
+			modelStack.Translate(pt.x * m_gridSize + m_gridOffset, pt.y * m_gridSize + m_gridOffset, 0.f);
+			modelStack.Scale(m_gridSize, m_gridSize, 1.f);
+			RenderMesh(meshList[GEO_WAYPOINT], false);
+			modelStack.PopMatrix();
 
 			//todo: cout the shortest path yourself for debugging purpose!
 		}
 	}
 
 	// Exercise Week 07 - Render agent's current pos
-
-	
-
+	modelStack.PushMatrix();
+	modelStack.Translate(currPos.x * m_gridSize + m_gridOffset, currPos.y * m_gridSize + m_gridOffset, 0.1f);
+	modelStack.Scale(m_gridSize, m_gridSize, 1.f);
+	RenderMesh(meshList[GEO_AGENT], false);
+	modelStack.PopMatrix();
 
 	//On screen text
 	std::ostringstream ss;
@@ -230,13 +247,15 @@ void SceneMaze::Render()
 	ss << "Press SPACE to speed up";
 	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 6);
 
-	// Exercise Week 07 - Render ï¿½Num Moveï¿½ in the right panel using m_maze.GetNumMove()
+	// Exercise Week 07 - Render “Num Move” in the right panel using m_maze.GetNumMove()
+	ss.str("");
+	ss << "Num Move:" << m_maze.GetNumMove();
+	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 3);
 
-	
-
-	// Exercise Week 07 - Render the maze key in the right panal e.g. ï¿½Maze 0ï¿½ or ï¿½Maze 8ï¿½
-
-
+	// Exercise Week 07 - Render the maze key in the right panal e.g. “Maze 0” or “Maze 8”
+	ss.str("");
+	ss << "Maze " << m_maze.GetKey();
+	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 0);
 }
 
 void SceneMaze::Exit()
@@ -273,25 +292,75 @@ void SceneMaze::DFS(const MazePt& curr)
 	m_visited[Get1DIndex(curr.x, curr.y)] = true; //mark current cell as visited
 
 	// Exercise Week 07 - Add this code to help real time rendering
-
-	
+	Application::GetInstance().Iterate();
+	Sleep(100);
 
 	// Exercise Week 07 - MOVE UP
-
-
+	//attempt to move up. check if such move is within boundary.
+	//in addition, movement is only possible if the next cell is unvisited
+	//unless it's on a return trip, this agent will attempt to make each step into uncharted ground
+	int nextIndex = Get1DIndex(curr.x, curr.y + 1);
+	if (IsWithinBoundary(curr.y + 1) && !m_visited[nextIndex])
+	{
+		if (m_maze.Move(Maze::DIRECTION::DIR_UP)) //move agent up
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_EMPTY;
+			DFS(MazePt{ curr.x, curr.y + 1 });
+			m_maze.Move(Maze::DIRECTION::DIR_DOWN); //return trip
+		}
+		else //wall up ahead, can't move to cell
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_WALL;
+		}
+	}
 
 	// Exercise Week 07 - MOVE DOWN
+	nextIndex = Get1DIndex(curr.x, curr.y - 1);
+	if (IsWithinBoundary(curr.y - 1) && !m_visited[nextIndex])
+	{
+		if (m_maze.Move(Maze::DIRECTION::DIR_DOWN))
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_EMPTY;
+			DFS(MazePt{ curr.x, curr.y - 1 });
+			m_maze.Move(Maze::DIRECTION::DIR_UP); //return trip
+		}
+		else //wall up ahead, can't move to cell
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_WALL;
+		}
+	}
 
-
-	
 	// Exercise Week 07 - MOVE LEFT
-
-	
+	nextIndex = Get1DIndex(curr.x - 1, curr.y);
+	if (IsWithinBoundary(curr.x - 1) && !m_visited[nextIndex])
+	{
+		if (m_maze.Move(Maze::DIRECTION::DIR_LEFT))
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_EMPTY;
+			DFS(MazePt{ curr.x - 1, curr.y });
+			m_maze.Move(Maze::DIRECTION::DIR_RIGHT); //return trip
+		}
+		else //wall up ahead, can't move to cell
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_WALL;
+		}
+	}
 
 	// Exercise Week 07 - MOVE RIGHT
-
-
-
+	nextIndex = Get1DIndex(curr.x + 1, curr.y);
+	if (IsWithinBoundary(curr.x + 1) && !m_visited[nextIndex])
+	{
+		if (m_maze.Move(Maze::DIRECTION::DIR_RIGHT))
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_EMPTY;
+			DFS(MazePt{ curr.x + 1, curr.y });
+			m_maze.Move(Maze::DIRECTION::DIR_LEFT); //return trip
+		}
+		else //wall up ahead, can't move to cell
+		{
+			m_myGrid[nextIndex] = Maze::TILE_CONTENT::TILE_WALL;
+		}
+	}
 }
 
 //week 7
@@ -320,8 +389,8 @@ bool SceneMaze::BFS(const MazePt& start, const MazePt& end)
 		m_queue.pop();
 
 		// Exercise Week 07 - Add this code to help real time rendering
-
-		
+		Application::GetInstance().Iterate();
+		Sleep(100);
 
 		m_maze.SetCurr(pt); //move agent to this node
 		if (pt.x == end.x && pt.y == end.y) //check if destination reached
@@ -340,20 +409,52 @@ bool SceneMaze::BFS(const MazePt& start, const MazePt& end)
 		// Exercise Week 07
 		//push neighbouring cells into queue for further expansion
 		//CHECK UP
+		int nextIndex = Get1DIndex(pt.x, pt.y + 1);
+		if (IsWithinBoundary(pt.y + 1) && !m_visited[nextIndex] && 
+			m_myGrid[nextIndex] == Maze::TILE_CONTENT::TILE_EMPTY)
+		{
+			//we marked any node we pushed into the queue as visited
+			m_visited[nextIndex] = true;
+			m_queue.push(MazePt{ pt.x, pt.y + 1 });
+			//each time we push a new node into queue, we record its prior position
+			m_previous[nextIndex] = pt;
+		}
 
-		
-		
 		// Exercise Week 07 - CHECK DOWN
+		nextIndex = Get1DIndex(pt.x, pt.y - 1);
+		if (IsWithinBoundary(pt.y - 1) && !m_visited[nextIndex] &&
+			m_myGrid[nextIndex] == Maze::TILE_CONTENT::TILE_EMPTY)
+		{
+			//we marked any node we pushed into the queue as visited
+			m_visited[nextIndex] = true;
+			m_queue.push(MazePt{ pt.x, pt.y - 1 });
+			//each time we push a new node into queue, we record its prior position
+			m_previous[nextIndex] = pt;
+		}
 
-
-		
 		// Exercise Week 07 - CHECK LEFT
-
-		
+		nextIndex = Get1DIndex(pt.x - 1, pt.y);
+		if (IsWithinBoundary(pt.x - 1) && !m_visited[nextIndex] &&
+			m_myGrid[nextIndex] == Maze::TILE_CONTENT::TILE_EMPTY)
+		{
+			//we marked any node we pushed into the queue as visited
+			m_visited[nextIndex] = true;
+			m_queue.push(MazePt{ pt.x - 1, pt.y });
+			//each time we push a new node into queue, we record its prior position
+			m_previous[nextIndex] = pt;
+		}
 
 		// Exercise Week 07 - CHECK RIGHT
-
-
+		nextIndex = Get1DIndex(pt.x + 1, pt.y);
+		if (IsWithinBoundary(pt.x + 1) && !m_visited[nextIndex] &&
+			m_myGrid[nextIndex] == Maze::TILE_CONTENT::TILE_EMPTY)
+		{
+			//we marked any node we pushed into the queue as visited
+			m_visited[nextIndex] = true;
+			m_queue.push(MazePt{ pt.x + 1, pt.y });
+			//each time we push a new node into queue, we record its prior position
+			m_previous[nextIndex] = pt;
+		}
 	}
 
 	m_maze.SetCurr(start); //no path found. place agent at start pt

@@ -1,22 +1,23 @@
-#include "SceneMovement_Week04.h"
+#include "SceneMovement_Week05.h"
 #include "GL\glew.h"
 #include "Application.h"
 #include <sstream>
 #include "StatesFish.h"
 #include "StatesShark.h"
+#include "StatesFishFood.h"
 #include "SceneData.h"
 #include "PostOffice.h"
 #include "ConcreteMessages.h"
 
-SceneMovement_Week04::SceneMovement_Week04()
+SceneMovement_Week05::SceneMovement_Week05()
 {
 }
 
-SceneMovement_Week04::~SceneMovement_Week04()
+SceneMovement_Week05::~SceneMovement_Week05()
 {
 }
 
-void SceneMovement_Week04::Init()
+void SceneMovement_Week05::Init()
 {
 	SceneBase::Init();
 
@@ -26,7 +27,7 @@ void SceneMovement_Week04::Init()
 
 	//Physics code here
 	m_speed = 1.f;
-
+	
 	Math::InitRNG();
 
 	SceneData::GetInstance()->SetObjectCount(0);
@@ -42,24 +43,24 @@ void SceneMovement_Week04::Init()
 	m_gridOffset = SceneData::GetInstance()->GetGridOffset();
 	m_hourOfTheDay = 0;
 
-	GameObject* go = FetchGO(GameObject::GO_SHARK);
+	GameObject *go = FetchGO(GameObject::GO_SHARK);
 	go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
 	go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
 	go->target = go->pos;
 
-	// Exercise Week 4
-	// Register this scene with the "post office"
-	// Post office will now be capable of addressing this scene with messages
+	//week 4
+	//register this scene with the "post office"
+	//post office will now be capable of addressing this scene with messages
 	PostOffice::GetInstance()->Register("Scene", this);
 
 	srand(time(NULL));
 }
 
-GameObject* SceneMovement_Week04::FetchGO(GameObject::GAMEOBJECT_TYPE type)
+GameObject* SceneMovement_Week05::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 {
-	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
+	for (std::vector<GameObject *>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
 	{
-		GameObject* go = (GameObject*)*it;
+		GameObject *go = (GameObject *)*it;
 		if (!go->active && go->type == type)
 		{
 			go->active = true;
@@ -68,7 +69,7 @@ GameObject* SceneMovement_Week04::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 	}
 	for (unsigned i = 0; i < 5; ++i)
 	{
-		GameObject* go = new GameObject(type);
+		GameObject *go = new GameObject(type);
 		m_goList.push_back(go);
 		if (type == GameObject::GO_FISH)
 		{
@@ -85,11 +86,17 @@ GameObject* SceneMovement_Week04::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 			go->sm->AddState(new StateNaughty("Naughty", go));
 			go->sm->AddState(new StateHappy("Happy", go));
 		}
+		else if (type == GameObject::GO_FISHFOOD)
+		{
+			go->sm = new StateMachine();
+			go->sm->AddState(new StateEvolve("Evolve", go));
+			go->sm->AddState(new StateGrow("Grow", go));
+		}
 	}
 	return FetchGO(type);
 }
 
-void SceneMovement_Week04::Update(double dt)
+void SceneMovement_Week05::Update(double dt)
 {
 	SceneBase::Update(dt);
 
@@ -102,12 +109,12 @@ void SceneMovement_Week04::Update(double dt)
 	m_gridSize = SceneData::GetInstance()->GetGridSize();
 	m_gridOffset = SceneData::GetInstance()->GetGridOffset();
 	m_noGrid = SceneData::GetInstance()->GetNumGrid();
-
-	if (Application::IsKeyPressed(VK_OEM_MINUS))
+	
+	if(Application::IsKeyPressed(VK_OEM_MINUS))
 	{
 		m_speed = Math::Max(0.f, m_speed - 0.1f);
 	}
-	if (Application::IsKeyPressed(VK_OEM_PLUS))
+	if(Application::IsKeyPressed(VK_OEM_PLUS))
 	{
 		m_speed += 0.1f;
 	}
@@ -118,23 +125,23 @@ void SceneMovement_Week04::Update(double dt)
 
 	//Input Section
 	static bool bLButtonState = false;
-	if (!bLButtonState && Application::IsMousePressed(0))
+	if(!bLButtonState && Application::IsMousePressed(0))
 	{
 		bLButtonState = true;
 		std::cout << "LBUTTON DOWN" << std::endl;
 	}
-	else if (bLButtonState && !Application::IsMousePressed(0))
+	else if(bLButtonState && !Application::IsMousePressed(0))
 	{
 		bLButtonState = false;
 		std::cout << "LBUTTON UP" << std::endl;
 	}
 	static bool bRButtonState = false;
-	if (!bRButtonState && Application::IsMousePressed(1))
+	if(!bRButtonState && Application::IsMousePressed(1))
 	{
 		bRButtonState = true;
 		std::cout << "RBUTTON DOWN" << std::endl;
 	}
-	else if (bRButtonState && !Application::IsMousePressed(1))
+	else if(bRButtonState && !Application::IsMousePressed(1))
 	{
 		bRButtonState = false;
 		std::cout << "RBUTTON UP" << std::endl;
@@ -143,12 +150,12 @@ void SceneMovement_Week04::Update(double dt)
 	if (!bSpaceState && Application::IsKeyPressed(VK_SPACE))
 	{
 		bSpaceState = true;
-		GameObject* go = FetchGO(GameObject::GO_FISH);
+		GameObject *go = FetchGO(GameObject::GO_FISH);
 		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
 		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
 		go->target = go->pos;
 		go->steps = 0;
-		go->energy = 10.f;
+		go->energy = 8.f;
 		go->nearest = NULL;
 		go->sm->SetNextState("Full");
 	}
@@ -160,11 +167,12 @@ void SceneMovement_Week04::Update(double dt)
 	if (!bVState && Application::IsKeyPressed('V'))
 	{
 		bVState = true;
-		GameObject* go = FetchGO(GameObject::GO_FISHFOOD);
+		GameObject *go = FetchGO(GameObject::GO_FISHFOOD);
 		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
 		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
 		go->target = go->pos;
 		go->moveSpeed = 1.f;
+		go->sm->SetNextState("Grow");
 	}
 	else if (bVState && !Application::IsKeyPressed('V'))
 	{
@@ -174,7 +182,7 @@ void SceneMovement_Week04::Update(double dt)
 	if (!bBState && Application::IsKeyPressed('B'))
 	{
 		bBState = true;
-		GameObject* go = FetchGO(GameObject::GO_SHARK);
+		GameObject *go = FetchGO(GameObject::GO_SHARK);
 		go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
 		go->pos.Set(m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, m_gridOffset + Math::RandIntMinMax(0, m_noGrid - 1) * m_gridSize, 0);
 		go->target = go->pos;
@@ -190,6 +198,7 @@ void SceneMovement_Week04::Update(double dt)
 		GameObject* go = (GameObject*)*it;
 		if (!go->active)
 			continue;
+
 		if (go->sm)
 			go->sm->Update(dt);
 	}
@@ -207,7 +216,7 @@ void SceneMovement_Week04::Update(double dt)
 				MessageWRU msgCheckFish = MessageWRU(go, MessageWRU::SEARCH_TYPE::NEAREST_FISHFOOD, 50.0f);
 				Handle(&msgCheckFish);
 			}
-			else if(go->sm->GetCurrentState() == "Full")
+			else if (go->sm->GetCurrentState() == "Full")
 			{
 				MessageWRU msgCheckFish = MessageWRU(go, MessageWRU::SEARCH_TYPE::NEAREST_SHARK, 50.0f);
 				Handle(&msgCheckFish);
@@ -271,10 +280,22 @@ void SceneMovement_Week04::Update(double dt)
 		}
 	}
 
-	//Movement Section
-	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
+	// Add new Game Objects to m_goList (if any)
+	if (m_goList_Add.size() > 0)
 	{
-		GameObject* go = (GameObject*)*it;
+		for (std::vector<GameObject*>::iterator it = m_goList_Add.begin(); it != m_goList_Add.end(); ++it)
+		{
+			GameObject* go = (GameObject*)*it;
+			m_goList.push_back(go);
+		}
+		m_goList_Add.clear();
+	}
+
+
+	//Movement Section
+	for(std::vector<GameObject *>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
+	{
+		GameObject *go = (GameObject *)*it;
 		if (!go->active)
 			continue;
 		Vector3 dir = go->target - go->pos;
@@ -289,7 +310,7 @@ void SceneMovement_Week04::Update(double dt)
 				go->target = go->pos + Vector3(-m_gridSize, 0, 0);
 			else if (random < 0.75f && go->moveUp)
 				go->target = go->pos + Vector3(0, m_gridSize, 0);
-			else if (go->moveDown)
+			else if(go->moveDown)
 				go->target = go->pos + Vector3(0, -m_gridSize, 0);
 			if (go->target.x < 0 || go->target.x > m_noGrid * m_gridSize || go->target.y < 0 || go->target.y > m_noGrid * m_gridSize)
 				go->target = go->pos;
@@ -334,10 +355,10 @@ void SceneMovement_Week04::Update(double dt)
 }
 
 
-void SceneMovement_Week04::RenderGO(GameObject* go)
+void SceneMovement_Week05::RenderGO(GameObject *go)
 {
 	std::ostringstream ss;
-	switch (go->type)
+	switch(go->type)
 	{
 	case GameObject::GO_BALL:
 		modelStack.PushMatrix();
@@ -367,7 +388,17 @@ void SceneMovement_Week04::RenderGO(GameObject* go)
 			else
 				RenderMesh(meshList[GEO_DEAD], false);
 		}
-
+		
+		// Exercise Week 05
+		{
+			modelStack.PushMatrix();
+			const Vector3 displacement = (go->nearest == NULL ? go->target : go->nearest->pos) - go->pos;
+			modelStack.Rotate(Math::RadianToDegree(atan2(displacement.y, displacement.x)), 0, 0, 1);
+			modelStack.Scale(displacement.Length() / SceneData::GetInstance()->GetGridSize(), .3f, 1.f);
+			RenderMesh(meshList[GEO_LINE], false);
+			modelStack.PopMatrix();
+		}
+		
 		modelStack.PushMatrix();
 		ss.precision(3);
 		ss << "[" << go->pos.x << ", " << go->pos.y << "]";
@@ -405,8 +436,7 @@ void SceneMovement_Week04::RenderGO(GameObject* go)
 		ss.precision(3);
 		ss << "[" << go->pos.x << ", " << go->pos.y << "]";
 		modelStack.Scale(0.5f, 0.5f, 0.5f);
-		modelStack.Translate(-SceneData::GetInstance()->GetGridSize() / 4, 
-			-SceneData::GetInstance()->GetGridSize() / 4, 0);
+		modelStack.Translate(-SceneData::GetInstance()->GetGridSize() / 4, -SceneData::GetInstance()->GetGridSize() / 4, 0);
 		RenderText(meshList[GEO_TEXT], ss.str(), Color(0, 0, 0));
 		modelStack.PopMatrix();
 		modelStack.PopMatrix();
@@ -416,21 +446,20 @@ void SceneMovement_Week04::RenderGO(GameObject* go)
 		modelStack.Translate(go->pos.x, go->pos.y, zOffset);
 		modelStack.Scale(go->scale.x, go->scale.y, go->scale.z);
 		RenderMesh(meshList[GEO_FISHFOOD], false);
-		modelStack.PushMatrix();
-		ss.str("");
-		ss.precision(3);
-		ss << "[" << go->pos.x << ", " << go->pos.y << "]";
-		modelStack.Scale(0.5f, 0.5f, 0.5f);
-		modelStack.Translate(-SceneData::GetInstance()->GetGridSize() / 4, 
-			-SceneData::GetInstance()->GetGridSize() / 4, 0);
-		RenderText(meshList[GEO_TEXT], ss.str(), Color(0, 0, 0));
-		modelStack.PopMatrix();
+			modelStack.PushMatrix();
+				ss.str("");
+				ss.precision(3);
+				ss << "[" << go->pos.x << ", " << go->pos.y << "]";
+				modelStack.Scale(0.5f, 0.5f, 0.5f);
+				modelStack.Translate(-SceneData::GetInstance()->GetGridSize() / 4, -SceneData::GetInstance()->GetGridSize() / 4, 0);
+				RenderText(meshList[GEO_TEXT], ss.str(), Color(0, 0, 0));
+			modelStack.PopMatrix();
 		modelStack.PopMatrix();
 		break;
 	}
 }
 
-void SceneMovement_Week04::Render()
+void SceneMovement_Week05::Render()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -438,17 +467,17 @@ void SceneMovement_Week04::Render()
 	Mtx44 projection;
 	projection.SetToOrtho(0, m_worldWidth, 0, m_worldHeight, -10, 10);
 	projectionStack.LoadMatrix(projection);
-
+	
 	// Camera matrix
 	viewStack.LoadIdentity();
 	viewStack.LookAt(
-		camera.position.x, camera.position.y, camera.position.z,
-		camera.target.x, camera.target.y, camera.target.z,
-		camera.up.x, camera.up.y, camera.up.z
-	);
+						camera.position.x, camera.position.y, camera.position.z,
+						camera.target.x, camera.target.y, camera.target.z,
+						camera.up.x, camera.up.y, camera.up.z
+					);
 	// Model matrix : an identity matrix (model will be at the origin)
 	modelStack.LoadIdentity();
-
+	
 	RenderMesh(meshList[GEO_AXES], false);
 
 	modelStack.PushMatrix();
@@ -458,10 +487,10 @@ void SceneMovement_Week04::Render()
 	modelStack.PopMatrix();
 
 	zOffset = 0;
-	for (std::vector<GameObject*>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
+	for(std::vector<GameObject *>::iterator it = m_goList.begin(); it != m_goList.end(); ++it)
 	{
-		GameObject* go = (GameObject*)*it;
-		if (go->active)
+		GameObject *go = (GameObject *)*it;
+		if(go->active)
 		{
 			zOffset += 0.001f;
 			RenderGO(go);
@@ -495,7 +524,7 @@ void SceneMovement_Week04::Render()
 	ss.precision(3);
 	ss << "Speed:" << m_speed;
 	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 6);
-
+	
 	ss.str("");
 	ss.precision(5);
 	ss << "FPS:" << fps;
@@ -516,21 +545,21 @@ void SceneMovement_Week04::Render()
 	ss.str("");
 	ss << "Food:" << m_numGO[GameObject::GO_FISHFOOD];
 	RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 12);
-
+	
 	RenderTextOnScreen(meshList[GEO_TEXT], "Aquarium", Color(0, 1, 0), 3, 50, 0);
 }
 
-void SceneMovement_Week04::Exit()
+void SceneMovement_Week05::Exit()
 {
 	SceneBase::Exit();
 	//Cleanup GameObjects
-	while (m_goList.size() > 0)
+	while(m_goList.size() > 0)
 	{
-		GameObject* go = m_goList.back();
+		GameObject *go = m_goList.back();
 		delete go;
 		m_goList.pop_back();
 	}
-	if (m_ghost)
+	if(m_ghost)
 	{
 		delete m_ghost;
 		m_ghost = NULL;
@@ -539,8 +568,51 @@ void SceneMovement_Week04::Exit()
 
 // Exercise Week 4
 //handle all incoming messages from PostOffice
-bool SceneMovement_Week04::Handle(Message* message)
+bool SceneMovement_Week05::Handle(Message* message)
 {
+	// Exercise Week 05
+	MessageSpawnFood* msgSpawnFood = dynamic_cast<MessageSpawnFood*>(message);
+	if (msgSpawnFood)
+	{
+		for (int i = 0; i < msgSpawnFood->count; i++)
+		{
+			// Need to solve this
+			////GameObject* go = FetchGO((GameObject::GAMEOBJECT_TYPE)(msgSpawnFood->type));
+			GameObject* go = new GameObject((GameObject::GAMEOBJECT_TYPE)(msgSpawnFood->type));
+			go->scale.Set(m_gridSize, m_gridSize, m_gridSize);
+			go->pos.Set(m_gridOffset + msgSpawnFood->go->pos.x + 
+								Math::RandIntMinMax(msgSpawnFood->distRange[0], msgSpawnFood->distRange[1]) * m_gridSize,
+						m_gridOffset + msgSpawnFood->go->pos.y + 
+								Math::RandIntMinMax(msgSpawnFood->distRange[0], msgSpawnFood->distRange[1]) * m_gridSize, 0);
+			go->target = go->pos;
+			go->moveSpeed = 1.f;
+			go->active = true; 
+			//m_goList.insert(m_goList.end(), 1, go);
+			m_goList_Add.push_back(go);
+		}
+		return true;
+	}
+
+	MessageEvolve* msgFishFoodEvolve = dynamic_cast<MessageEvolve*>(message);
+	if (msgFishFoodEvolve)
+	{
+		msgFishFoodEvolve->go->Handle(message);
+
+		msgFishFoodEvolve->go->sm = new StateMachine();
+		msgFishFoodEvolve->go->sm->AddState(new StateTooFull("TooFull", msgFishFoodEvolve->go));
+		msgFishFoodEvolve->go->sm->AddState(new StateFull("Full", msgFishFoodEvolve->go));
+		msgFishFoodEvolve->go->sm->AddState(new StateHungry("Hungry", msgFishFoodEvolve->go));
+		msgFishFoodEvolve->go->sm->AddState(new StateDead("Dead", msgFishFoodEvolve->go));
+
+		msgFishFoodEvolve->go->target = msgFishFoodEvolve->go->pos;
+		msgFishFoodEvolve->go->steps = 0;
+		msgFishFoodEvolve->go->energy = 8.f;
+		msgFishFoodEvolve->go->nearest = NULL;
+		msgFishFoodEvolve->go->sm->SetNextState("Full");
+
+		return true;
+	}
+
 	MessageWRU* messageWRU = dynamic_cast<MessageWRU*>(message);
 	if (messageWRU)
 	{
@@ -602,6 +674,15 @@ bool SceneMovement_Week04::Handle(Message* message)
 					go->nearest = go2;
 				}
 			}
+		}
+
+		// Exercise Week 05
+		if ((messageWRU->type == MessageWRU::NEAREST_FISHFOOD) &&
+			(go->nearest != NULL) && (go->nearest->type == GameObject::GO_FISHFOOD))
+		{
+			// Exercise Week 05
+			MessageStop msgFishFoodStop = MessageStop();
+			go->nearest->Handle(&msgFishFoodStop);
 		}
 
 		//delete message; //remember, the message is allocated on the heap!
