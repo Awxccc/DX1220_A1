@@ -19,6 +19,7 @@
 #include "SceneKnight.h"
 #include "SceneMaze.h"
 #include "SceneQueen.h"
+#include "SceneTurn.h"
 
 GLFWwindow* m_window;
 const unsigned char FPS = 60; // FPS of this game
@@ -158,6 +159,7 @@ bool Application::LoadScene()
 			break;
 		case 10:
 			std::cout << "You selected SceneTurn.\n";
+			m_scene = new SceneTurn();
 			bContinue = false;
 			break;
 		case 11:

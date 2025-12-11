@@ -151,6 +151,7 @@
     <ClCompile Include="Source\SceneMovement_Week05.cpp" />
     <ClCompile Include="Source\SceneQueen.cpp" />
     <ClCompile Include="Source\SceneTicTacToe.cpp" />
+    <ClCompile Include="Source\SceneTurn.cpp" />
     <ClCompile Include="Source\shader.cpp" />
     <ClCompile Include="Source\State.cpp" />
     <ClCompile Include="Source\StateMachine.cpp" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Source\SceneMovement_Week05.h" />
     <ClInclude Include="Source\SceneQueen.h" />
     <ClInclude Include="Source\SceneTicTacToe.h" />
+    <ClInclude Include="Source\SceneTurn.h" />
     <ClInclude Include="Source\shader.hpp" />
     <ClInclude Include="Source\State.h" />
     <ClInclude Include="Source\StateMachine.h" />

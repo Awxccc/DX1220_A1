@@ -291,7 +291,19 @@ void SceneTurn::Update(double dt)
 		// Exercise Week 08
 		//7.	SceneTurn::Update, spawn a GO_NPC with spacebar at any empty tile
 
-
+		GameObject* go = FetchGO(GameObject::GAMEOBJECT_TYPE::GO_NPC);
+		go->grid.resize(m_noGrid * m_noGrid);
+		go->visited.resize(m_noGrid * m_noGrid);
+		std::fill(go->grid.begin(), go->grid.end(), Maze::TILE_FOG);
+		std::fill(go->visited.begin(), go->visited.end(), false);
+		//set position to a random EMPTY tile 
+		do
+		{
+			go->curr.Set(Math::RandIntMinMax(0, m_noGrid - 1),
+				Math::RandIntMinMax(0, m_noGrid - 1));
+		} while (m_maze.See(go->curr) != Maze::TILE_EMPTY);
+		go->grid[Get1DIndex(go->curr.x, go->curr.y)] = Maze::TILE_EMPTY;
+		go->stack.push_back(go->curr); //triggers dfs
 
 	}
 	else if (bSpaceState && !Application::IsKeyPressed(VK_SPACE))
@@ -303,7 +315,21 @@ void SceneTurn::Update(double dt)
 	static constexpr float TURN_TIME = 0.5f;
 	static float timer = 0.f;
 	// 6.	SceneTurn::Update - add code to support a turn-based system. Read this pseudo codes and try to implement on your own. The solution will be provided during lesson time.
+	timer += m_speed * static_cast<float>(dt);
+	if (timer > TURN_TIME)
+	{
+		m_turn++;
+		timer = 0.f;
 
+		//Move all entities
+		for (GameObject* go : m_goList)
+		{
+			if (go->active && go->type == GameObject::GO_NPC)
+			{
+				DFSOnce(go);
+			}
+		}
+	}
 
 
 }
@@ -365,6 +391,19 @@ void SceneTurn::Render()
 			modelStack.Scale(m_gridSize, m_gridSize, m_gridSize);
 			// Exercise Week 08
 			// b.Render the tiles using m_maze.m_grid instead of m_myGrid
+			switch (m_maze.m_grid[row * m_noGrid + col])
+			{
+			case Maze::TILE_WALL:
+				RenderMesh(meshList[GEO_WALL], false);
+				break;
+			case Maze::TILE_FOG:
+				meshList[GEO_WHITEQUAD]->material.kAmbient.Set(0.f, 0.f, 0.f);
+				RenderMesh(meshList[GEO_WHITEQUAD], true);
+				break;
+			case Maze::TILE_EMPTY:
+				RenderMesh(meshList[GEO_FLOOR], false);
+				break;
+			}
 
 			modelStack.PopMatrix();
 		}
@@ -389,8 +428,11 @@ void SceneTurn::Render()
 
 	// Exercise Week 8
 	//c.	Render each go based on its curr position - edit RenderGO(GameObject::GO_NPC)
-
-	
+	for (GameObject* go : m_goList)
+	{
+		if (go->active)
+			RenderGO(go);
+	}
 
 	//On screen text
 	std::ostringstream ss;
@@ -414,7 +456,17 @@ void SceneTurn::Render()
 	// Exercise Week 08
 	// 10.	Print out the GameObject's ID and its target position
 
-
+	int j = 0;
+	for (GameObject* go : m_goList)
+	{
+		if (go->active && go->type == GameObject::GO_NPC)
+		{
+			ss.str("");
+			ss << go->id << ": BFS to pos " << m_end.x << ", " << m_end.y;
+			RenderTextOnScreen(meshList[GEO_TEXT], ss.str(), Color(0, 1, 0), 3, 50, 57 - j * 3);
+			j++;
+		}
+	}
 
 }
 
@@ -444,11 +496,141 @@ int SceneTurn::Get1DIndex(int x, int y) const
 
 // Exercise Week 08
 // 8.	Implement DFSOnce() - this method will not be recursive. We will use a go->stack to help us with the depth first search
+void SceneTurn::DFSOnce(GameObject* go)
+{
+	MazePt curr{ go->curr.x, go->curr.y };
+	std::vector<MazePt>& stack = go->stack; //get a short-hand to stack instead of constant use of indirection later
+		if (stack.empty() ||stack.back().x != curr.x || stack.back().y != curr.y)
+			//make sure we don't push node into stack when backtracking 
+			go->stack.push_back(curr);
+	go->visited[Get1DIndex(curr.x, curr.y)] = true;
+	//mark current node as visited 
 
+	 //offsets: UP, DOWN, LEFT, RIGHT 
+	static int offsets[][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } };
+
+	//check each direction 
+	//int (& offset)[2] ---> offset is a reference to int[2] 
+	MazePt next{};
+	for (int(&offset)[2] : offsets)
+	{
+		next.Set(curr.x + offset[0], curr.y + offset[1]);
+		//only consider next node if it's unvisited 
+		if (IsWithinBoundary(next.x) && IsWithinBoundary(next.y)
+			&& !go->visited[Get1DIndex(next.x, next.y)])
+		{
+			//update agent's mental record of the maze 
+			int idx = Get1DIndex(next.x, next.y);
+			go->grid[idx] = m_maze.See(next);
+			if (go->grid[idx] == Maze::TILE_CONTENT::TILE_EMPTY)
+			{
+				go->curr = next; //let's move to the next cell 
+				return;
+			}
+		}
+	}
+
+	//already fully explored all surrounding neighbours. time to backtrack
+		stack.pop_back();
+	if (!stack.empty())
+		go->curr = stack.back();
+}
 
 
 // Exercise Week 08
 // 9.	Implement BFSLimit() - BFS but with limit (e.g. 20 tiles to visit). If end is found, return path to end, else return path to tile that is closest with end
+//this implementation places a limit on how may tiles the agent is allowed to visit
+//it's a little difficult to come up with a useful example of when you'd need to do this in games, 
+//except perhaps for when you're working with limited hardware(?) or have an extremely specific use - case.
+bool SceneTurn::BFSLimit(GameObject* go, MazePt end, int limit)
+{
+	//reset containers/variables before performing search 
+	std::fill(m_visited.begin(), m_visited.end(), false);
+	std::fill(m_previous.begin(), m_previous.end(), -1); //may not actually be necessary to reset this
+		go->path.clear();
+	m_queue = {};
 
+	//push go's starting position into queue 
+	m_queue.push(go->curr);
+	//mark current node as visited 
+	m_visited[Get1DIndex(go->curr.x, go->curr.y)] = true;
 
+	int nearestDistance = INT_MAX;
+	MazePt nearestTile = go->curr;
+	int loop = 0;
 
+	MazePt curr{};
+	while (!m_queue.empty() && loop < limit)
+	{
+		++loop;
+		//set current active node in the search 
+		curr = m_queue.front();
+		m_queue.pop();
+
+		//calculate mahantten distance from curr to end pt. 
+		//the goal here is to keep track of which node is closest to the end pt(naive tracking.doesn't take into account surrounding obstacles)
+			//in case we exceeded search limit 
+			int distance = abs(m_end.x - curr.x) + abs(m_end.y -curr.y);
+		if (distance < nearestDistance)
+		{
+			nearestDistance = distance;
+			nearestTile = curr;
+		}
+		//construct shortest path 
+		if (curr.x == m_end.x && curr.y == m_end.y)
+		{
+			while (curr.x != go->curr.x || curr.y != go->curr.y)
+			{
+				go->path.insert(go->path.begin(), curr);
+				curr = m_previous[Get1DIndex(curr.x, curr.y)];
+			}
+			go->path.insert(go->path.begin(), curr);
+			// Print out the shortest path found 
+			std::cout << go->id << " found the shortest path: ";
+			for (int i = 0; i < go->path.size(); i++)
+			{
+				std::cout << "[" << go->path[i].x << ", " <<go->path[i].y << "]";
+			}
+			std::cout << std::endl;
+			return true;
+		}
+
+		//up, down, left, right 
+		static int offsets[][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0} };
+		MazePt next;
+		int nextIndex{};
+		for (int(&offset)[2] : offsets)
+		{
+			next.Set(curr.x + offset[0], curr.y + offset[1]);
+			nextIndex = Get1DIndex(next.x, next.y);
+
+			if (IsWithinBoundary(next.x) &&
+				IsWithinBoundary(next.y) &&           //test next pos to see if it's within the map
+				!m_visited[nextIndex] && go->grid[nextIndex] ==
+				Maze::TILE_EMPTY) //visit next tile if it's empty and unvisited
+			{
+				m_previous[nextIndex] = curr;
+				m_queue.push(next);
+				m_visited[nextIndex] = true;
+			}
+		}
+	}
+
+	//exceeded search limit without finding destination. 
+	//construct shortest path to nearestTile instead of targeted end tile
+		curr = nearestTile;
+	while (curr.x != go->curr.x || curr.y != go->curr.y)
+	{
+		go->path.insert(go->path.begin(), curr);
+		curr = m_previous[Get1DIndex(curr.x, curr.y)];
+	}
+
+	// Print out the shortest path to nearestTile 
+	std::cout << go->id << " received the shortest path to nearestTile: "; 
+		for (int i = 0; i < go->path.size(); i++)
+		{
+			std::cout << "[" << go->path[i].x << ", " << go->path[i].y << "]";
+		}
+	std::cout << std::endl;
+	return false;
+}
