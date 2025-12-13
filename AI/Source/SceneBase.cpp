@@ -176,6 +176,11 @@ void SceneBase::Init()
 	meshList[GEO_PIPE] = MeshBuilder::GenerateQuad("pipe", Color(1, 1, 1));
 	meshList[GEO_PIPE]->textureID = LoadTGA("Image//pipe-green.tga");
 
+	//Assignment 1
+	meshList[GEO_GREEN_BALL] = MeshBuilder::GenerateSphere("greenBall", Color(0, 1, 0), 10, 10, 1.f);
+	meshList[GEO_RED_CUBE] = MeshBuilder::GenerateCube("redCube", Color(1, 0, 0), 2.f);
+	meshList[GEO_GREY_CUBE] = MeshBuilder::GenerateCube("greyCube", Color(0.5f, 0.5f, 0.5f), 2.f);
+
 	bLightEnabled = false;
 }
 

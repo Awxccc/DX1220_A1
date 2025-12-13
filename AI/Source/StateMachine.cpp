@@ -22,7 +22,7 @@ void StateMachine::AddState(State *newState)
 	if (m_stateMap.find(newState->GetStateID()) != m_stateMap.end())
 		return;
 	if (!m_currState)
-		m_currState = m_nextState = newState;
+		m_nextState = newState;
 	m_stateMap.insert(std::pair<std::string, State*>(newState->GetStateID(), newState));
 }
 
@@ -46,9 +46,19 @@ void StateMachine::Update(double dt)
 {
 	if (m_nextState != m_currState)
 	{
-		m_currState->Exit();
+		// FIX: Safety check. If we are starting up, m_currState is NULL.
+		// We cannot call Exit() on a NULL pointer.
+		if (m_currState)
+			m_currState->Exit();
+
 		m_currState = m_nextState;
-		m_currState->Enter();
+
+		// FIX: Safety check. Ensure the new state exists before entering.
+		if (m_currState)
+			m_currState->Enter();
 	}
-	m_currState->Update(dt);
+
+	// FIX: Only update if we have a valid state
+	if (m_currState)
+		m_currState->Update(dt);
 }

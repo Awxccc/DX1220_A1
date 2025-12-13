@@ -80,6 +80,11 @@ public:
 		GEO_SIDEBAR,
 		GEO_CHARACTER,
 		GEO_PIPE,
+		//Assignment 1
+		GEO_GREEN_BALL, // For Peasants & Trees
+		GEO_RED_CUBE,   // For Orcs
+		GEO_GREY_CUBE,  // For TownHall
+
 		NUM_GEOMETRY,
 	};
 public:
