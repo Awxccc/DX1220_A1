@@ -20,6 +20,7 @@
 #include "SceneMaze.h"
 #include "SceneQueen.h"
 #include "SceneTurn.h"
+#include "SceneFrontier.h"
 
 GLFWwindow* m_window;
 const unsigned char FPS = 60; // FPS of this game
@@ -104,6 +105,7 @@ bool Application::LoadScene()
 		std::cout << "13. Week 13. SceneHex" << std::endl;
 		std::cout << "14. Week 14. SceneReversi" << std::endl;
 		std::cout << "15. Week 16. SceneFlappyBird" << std::endl;
+		std::cout << "16. Assignment 1. Frontier Defense" << std::endl;
 		std::cout << "0. Exit" << std::endl;
 		std::cout << "Enter your choice: ";
 
@@ -180,6 +182,11 @@ bool Application::LoadScene()
 			break;
 		case 15:
 			std::cout << "You selected SceneFlappyBird.\n";
+			bContinue = false;
+			break;
+		case 16:
+			std::cout << "You selected SceneFrontier.\n";
+			m_scene = new SceneFrontier();
 			bContinue = false;
 			break;
 		case 0:

@@ -91,4 +91,32 @@ struct MessageEvolve : public Message
 	GameObject* go;
 };
 
+//Assignment 1
+// Ask Scene to find nearest object of a specific type
+struct MessageFindNearest : public Message {
+	GameObject* requestor;
+	GameObject::GAMEOBJECT_TYPE targetType;
+	MessageFindNearest(GameObject* r, GameObject::GAMEOBJECT_TYPE t) : requestor(r), targetType(t) {}
+};
+
+// Combat Interaction
+struct MessageAttack : public Message {
+	GameObject* attacker;
+	GameObject* target;
+	float damage;
+	MessageAttack(GameObject* a, GameObject* t, float d) : attacker(a), target(t), damage(d) {}
+};
+
+// Global Notifications
+struct MessageRaidSuccess : public Message {
+	int amount;
+	MessageRaidSuccess(int a) : amount(a) {}
+};
+
+struct MessageSpawnUnit : public Message {
+	int teamID;
+	int cost;
+	MessageSpawnUnit(int t, int c) : teamID(t), cost(c) {}
+};
+
 #endif
