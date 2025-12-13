@@ -13,7 +13,6 @@ struct GameObject : public ObjectBase
 {
 	enum GAMEOBJECT_TYPE
 	{
-		//Weekly exercise stuff
 		GO_NONE = 0,
 		GO_BALL,
 		GO_CROSS,
@@ -26,25 +25,6 @@ struct GameObject : public ObjectBase
 		GO_NPC,
 		GO_BIRD,
 		GO_PIPE,
-
-		//Assignment1 stuff
-		//Kingdom
-		GO_PEASANT,
-		GO_KNIGHT,
-		GO_CLERIC,
-		GO_TOWNHALL,
-		GO_WALL,
-
-		//Horde
-		GO_GOBLIN,
-		GO_ORC,
-		GO_SHAMAN,
-		GO_TOTEM,
-
-		//Resources
-		GO_RESOURCE_TREE,
-		GO_RESOURCE_BERRY,
-		GO_PROJECTILE,
 		GO_TOTAL, //must be last
 	};
 	enum STATE
@@ -75,15 +55,6 @@ struct GameObject : public ObjectBase
 	bool moveDown;
 	StateMachine *sm;
 
-	//Assignment 1
-	int teamID;// 1 = Kingdom, 2 = Horde
-	float hp;
-	float maxHp;
-	int inventory;
-	int maxInventory;
-	float attackCooldown;
-	float range;
-	
 	// For Week 05
 	//each instance has to have its own currState and nextState pointer(can't be shared)
 	State* currentState; //week 5: should probably be private. put that under TODO

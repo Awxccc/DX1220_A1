@@ -142,7 +142,6 @@
     <ClCompile Include="Source\PostOffice.cpp" />
     <ClCompile Include="Source\SceneBase.cpp" />
     <ClCompile Include="Source\SceneData.cpp" />
-    <ClCompile Include="Source\SceneFrontier.cpp" />
     <ClCompile Include="Source\SceneKnight.cpp" />
     <ClCompile Include="Source\SceneMaze.cpp" />
     <ClCompile Include="Source\SceneMovement_Week01.cpp" />
@@ -158,8 +157,6 @@
     <ClCompile Include="Source\StateMachine.cpp" />
     <ClCompile Include="Source\StatesFish.cpp" />
     <ClCompile Include="Source\StatesFishFood.cpp" />
-    <ClCompile Include="Source\StatesHorde.cpp" />
-    <ClCompile Include="Source\StatesKingdom.cpp" />
     <ClCompile Include="Source\StatesShark.cpp" />
     <ClCompile Include="Source\Utility.cpp" />
   </ItemGroup>
@@ -183,7 +180,6 @@
     <ClInclude Include="Source\Scene.h" />
     <ClInclude Include="Source\SceneBase.h" />
     <ClInclude Include="Source\SceneData.h" />
-    <ClInclude Include="Source\SceneFrontier.h" />
     <ClInclude Include="Source\SceneKnight.h" />
     <ClInclude Include="Source\SceneMaze.h" />
     <ClInclude Include="Source\SceneMovement_Week01.h" />
@@ -199,8 +195,6 @@
     <ClInclude Include="Source\StateMachine.h" />
     <ClInclude Include="Source\StatesFish.h" />
     <ClInclude Include="Source\StatesFishFood.h" />
-    <ClInclude Include="Source\StatesHorde.h" />
-    <ClInclude Include="Source\StatesKingdom.h" />
     <ClInclude Include="Source\StatesShark.h" />
     <ClInclude Include="Source\Utility.h" />
     <ClInclude Include="Source\Vertex.h" />
