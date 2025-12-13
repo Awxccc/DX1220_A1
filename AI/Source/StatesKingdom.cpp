@@ -52,8 +52,6 @@ void StatePeasantReturn::Exit() {}
 // --- KNIGHT ---
 void StateKnightPatrol::Enter() {
 	m_go->moveSpeed = 4.0f;
-	currentWP = 0;
-
 	if (waypoints.empty()) {
 		waypoints.push_back(Vector3(20, 20, 0));
 		waypoints.push_back(Vector3(20, 80, 0));
@@ -61,8 +59,6 @@ void StateKnightPatrol::Enter() {
 	}
 }
 void StateKnightPatrol::Update(double dt) {
-	if (waypoints.empty()) return;
-
 	// Patrol Logic
 	m_go->target = waypoints[currentWP];
 	if ((m_go->pos - m_go->target).Length() < 1.0f) {

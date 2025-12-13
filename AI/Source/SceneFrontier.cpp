@@ -20,8 +20,6 @@ void SceneFrontier::Init()
 	m_gridSize = m_worldHeight / 20.0f; // 20x20 Grid
 	m_timeLimit = 300.0f; // 5 Minutes
 
-	float halfGrid = m_gridSize * 0.5f;
-
 	m_humanResources = 0;
 	m_hordeResources = 0;
 
@@ -32,37 +30,33 @@ void SceneFrontier::Init()
 
 	// Town Hall (West)
 	GameObject* th = FetchGO(GameObject::GO_TOWNHALL);
-	th->pos.Set(2 * m_gridSize + halfGrid, 10 * m_gridSize + halfGrid, 0); 
+	th->pos.Set(m_gridSize * 2, m_worldHeight / 2, 0);
 	th->teamID = 1;
 	th->active = true;
-	th->maxHp = 500; th->hp = 500;
+	th->maxHp = 500;
+	th->hp = 500;
 
 	// Horde Totem (East)
-	int totemGridX = (int)(m_worldWidth / m_gridSize) - 3;
 	GameObject* totem = FetchGO(GameObject::GO_TOTEM);
-	totem->pos.Set(totemGridX * m_gridSize + halfGrid, 10 * m_gridSize + halfGrid, 0);
+	totem->pos.Set(m_worldWidth - m_gridSize * 2, m_worldHeight / 2, 0);
 	totem->teamID = 2;
 	totem->active = true;
 
 	// Resources
 	for (int i = 0; i < 15; ++i) {
 		GameObject* tree = FetchGO(GameObject::GO_RESOURCE_TREE);
-		int gridX = Math::RandIntMinMax(0, 19);
-		int gridY = Math::RandIntMinMax(0, 19);
-		tree->pos.Set(gridX * m_gridSize + halfGrid, gridY * m_gridSize + halfGrid, 0);
+		tree->pos.Set(Math::RandFloatMinMax(0, m_worldWidth), Math::RandFloatMinMax(0, m_worldHeight), 0);
 		tree->active = true;
 	}
 
 	// Units: 3 Peasants, 1 Knight, 1 Cleric
 	for (int i = 0; i < 3; ++i) {
 		GameObject* p = FetchGO(GameObject::GO_PEASANT);
-		p->pos = th->pos + Vector3(m_gridSize, float(i) * m_gridSize, 0); // Offset by 1 tile
+		p->pos = th->pos + Vector3(5, float(i) * 5, 0);
 		p->active = true;
 	}
-	GameObject* k = FetchGO(GameObject::GO_KNIGHT);
-	k->pos = th->pos + Vector3(2 * m_gridSize, 0, 0);
-	k->active = true;
-	GameObject* c = FetchGO(GameObject::GO_CLERIC); c->pos = th->pos + Vector3(-5 * m_gridSize, 0, 0); c->active = true;
+	GameObject* k = FetchGO(GameObject::GO_KNIGHT); k->pos = th->pos + Vector3(10, 0, 0); k->active = true;
+	GameObject* c = FetchGO(GameObject::GO_CLERIC); c->pos = th->pos + Vector3(-5, 0, 0); c->active = true;
 
 	// Units: 3 Goblins, 1 Orc, 1 Shaman
 	for (int i = 0; i < 3; ++i) {
@@ -77,11 +71,11 @@ void SceneFrontier::Init()
 GameObject* SceneFrontier::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 {
 	GameObject* go = new GameObject(type);
+	go->sm = new StateMachine();
 	go->scale.Set(m_gridSize * 0.8f, m_gridSize * 0.8f, 1);
 
 	// FSM Assignment
 	if (type == GameObject::GO_PEASANT) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StatePeasantIdle("Idle", go));
 		go->sm->AddState(new StatePeasantGather("Gather", go));
 		go->sm->AddState(new StatePeasantReturn("Return", go));
@@ -89,7 +83,6 @@ GameObject* SceneFrontier::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 		go->teamID = 1;
 	}
 	else if (type == GameObject::GO_KNIGHT) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StateKnightPatrol("Patrol", go));
 		go->sm->AddState(new StateKnightChase("Chase", go));
 		go->sm->AddState(new StateKnightAttack("Attack", go));
@@ -98,26 +91,22 @@ GameObject* SceneFrontier::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 		go->teamID = 1;
 	}
 	else if (type == GameObject::GO_CLERIC) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StateClericHeal("Heal", go));
 		go->sm->SetNextState("Heal");
 		go->teamID = 1;
 	}
 	else if (type == GameObject::GO_GOBLIN) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StateGoblinProwl("Prowl", go));
 		go->sm->AddState(new StateGoblinSteal("Steal", go));
 		go->sm->SetNextState("Prowl");
 		go->teamID = 2;
 	}
 	else if (type == GameObject::GO_ORC) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StateOrcSmash("Smash", go));
 		go->sm->SetNextState("Smash");
 		go->teamID = 2;
 	}
 	else if (type == GameObject::GO_SHAMAN) {
-		go->sm = new StateMachine();
 		go->sm->AddState(new StateShamanRitual("Ritual", go));
 		go->sm->SetNextState("Ritual");
 		go->teamID = 2;
@@ -135,30 +124,20 @@ GameObject* SceneFrontier::FetchGO(GameObject::GAMEOBJECT_TYPE type)
 void SceneFrontier::Update(double dt)
 {
 	SceneBase::Update(dt);
-	m_timeLimit -= (float)dt;
-	if (m_timeLimit <= 0) return;
 
+	m_timeLimit -= (float)dt;
+	if (m_timeLimit <= 0) return; // Simulation End
+
+	// Update State Machines and Movement
 	for (auto go : m_goList) {
 		if (!go->active) continue;
+
 		if (go->sm) go->sm->Update(dt);
 
-		// --- UPDATED MOVEMENT LOGIC (WEEK 05 STYLE) ---
-		// Calculate distance to target
-		Vector3 dir = go->target - go->pos;
-		float dist = dir.Length();
-
-		// If we can reach the target in this frame (or are very close)
-		if (dist < go->moveSpeed * (float)dt) {
-			// SNAP to exact position
-			go->pos = go->target;
-		}
-		else {
-			// Move towards target
-			// Use try-catch or check length > 0 to avoid divide by zero
-			if (dist > 0) {
-				dir.Normalize();
-				go->pos += dir * go->moveSpeed * (float)dt;
-			}
+		// Physics Movement clamped to Grid
+		if ((go->target - go->pos).Length() > 0.1f) {
+			Vector3 dir = (go->target - go->pos).Normalized();
+			go->pos += dir * go->moveSpeed * (float)dt;
 		}
 	}
 	if (m_goList_Add.size() > 0)
@@ -269,19 +248,12 @@ void SceneFrontier::RenderGO(GameObject* go)
 	modelStack.Translate(go->pos.x, go->pos.y, 0);
 	modelStack.Scale(go->scale.x, go->scale.y, 1);
 
-	// UPDATED MAPPING
-	if (go->type == GameObject::GO_PEASANT)
-		RenderMesh(meshList[GEO_GREEN_BALL], false); // Now actually Green
-	else if (go->type == GameObject::GO_ORC)
-		RenderMesh(meshList[GEO_RED_CUBE], false);   // Now actually Red
-	else if (go->type == GameObject::GO_TOWNHALL)
-		RenderMesh(meshList[GEO_GREY_CUBE], false);  // Grey Base
-	else if (go->type == GameObject::GO_RESOURCE_TREE)
-		RenderMesh(meshList[GEO_GREEN_BALL], false); // Green Tree
-	else if (go->type == GameObject::GO_TOTEM)
-		RenderMesh(meshList[GEO_CUBE], false);       // White Totem (default)
-	else
-		RenderMesh(meshList[GEO_BALL], false);       // Default Red Ball for others
+	// Simple Shape Mapping
+	if (go->type == GameObject::GO_PEASANT) RenderMesh(meshList[GEO_BALL], false); // Green Ball
+	else if (go->type == GameObject::GO_ORC) RenderMesh(meshList[GEO_CUBE], false); // Red Cube
+	else if (go->type == GameObject::GO_TOWNHALL) RenderMesh(meshList[GEO_CUBE], false); // Big Cube
+	else if (go->type == GameObject::GO_RESOURCE_TREE) RenderMesh(meshList[GEO_BALL], false); // Tree
+	// Add other mappings...
 
 	modelStack.PopMatrix();
 }
